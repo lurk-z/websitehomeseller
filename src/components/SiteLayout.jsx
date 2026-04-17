@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { pushAnalyticsEvent } from '../lib/analytics'
+import ThreeBackground from './ThreeBackground'
 
 const navItems = [
   { to: '/', label: 'Home' },
@@ -33,6 +34,7 @@ function SiteLayout() {
 
   return (
     <div className="site-shell">
+      <ThreeBackground />
       <header className="site-header">
         <div className="site-utility">
           <div className="container utility-bar">

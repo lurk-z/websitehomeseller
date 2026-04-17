@@ -6,10 +6,7 @@
   line-height: 1.5;
   font-weight: 400;
   color: #2b261f;
-  background:
-    radial-gradient(circle at 12% 12%, rgba(244, 184, 51, 0.2), transparent 24%),
-    radial-gradient(circle at 88% 26%, rgba(126, 144, 103, 0.16), transparent 22%),
-    linear-gradient(135deg, #faf4e8 0%, #f8f4ec 45%, #eef1e6 100%);
+  background: transparent;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
