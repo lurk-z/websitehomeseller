@@ -1,4 +1,6 @@
-import { NavLink, Outlet } from 'react-router-dom'
+import { useEffect } from 'react'
+import { NavLink, Outlet, useLocation } from 'react-router-dom'
+import { pushAnalyticsEvent } from '../lib/analytics'
 
 const navItems = [
   { to: '/', label: 'Home' },
@@ -8,7 +10,27 @@ const navItems = [
   { to: '/contact', label: 'Contact' },
 ]
 
+const pageTitles = {
+  '/': 'Ration | Home',
+  '/about': 'Ration | About Us',
+  '/services': 'Ration | Services',
+  '/product': 'Ration | Product',
+  '/contact': 'Ration | Contact',
+}
+
 function SiteLayout() {
+  const location = useLocation()
+
+  useEffect(() => {
+    const title = pageTitles[location.pathname] || 'Ration'
+    document.title = title
+
+    pushAnalyticsEvent('page_view', {
+      page_name: title,
+      page_path: location.pathname,
+    })
+  }, [location.pathname])
+
   return (
     <div className="site-shell">
       <header className="site-header">

@@ -1043,3 +1043,43 @@
     height: 220px;
   }
 }
+
+/* Analytics and form states */
+.contact-form-card input[aria-invalid="true"],
+.contact-form-card textarea[aria-invalid="true"] {
+  border-color: #d35a39;
+  box-shadow: 0 0 0 1px rgba(211, 90, 57, 0.18);
+}
+
+.contact-field-error {
+  color: #b44a2c;
+  font-size: 0.8rem;
+  line-height: 1.5;
+}
+
+.contact-submit-status {
+  min-height: 24px;
+}
+
+.contact-feedback {
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  line-height: 1.6;
+}
+
+.contact-feedback-success {
+  background: rgba(104, 141, 86, 0.14);
+  color: #4d6a3d;
+}
+
+.contact-feedback-error {
+  background: rgba(211, 90, 57, 0.12);
+  color: #9e4028;
+}
+
+.primary-button:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
