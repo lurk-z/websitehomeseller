@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { buildContactResponse } from './api/contact-handler.js'
+import { buildRegisterResponse } from './api/register-handler.js'
 
 function readRequestBody(req) {
   return new Promise((resolve, reject) => {
@@ -20,18 +21,26 @@ function readRequestBody(req) {
   })
 }
 
+const apiRoutes = {
+  '/api/contact': buildContactResponse,
+  '/api/register': buildRegisterResponse,
+}
+
 function contactApiDevPlugin() {
   return {
     name: 'contact-api-dev',
     configureServer(server) {
       server.middlewares.use(async (req, res, next) => {
-        if (!req.url || !req.url.startsWith('/api/contact')) {
+        const routePath = (req.url || '').split('?')[0]
+        const handler = apiRoutes[routePath]
+
+        if (!handler) {
           return next()
         }
 
         try {
           const body = await readRequestBody(req)
-          const result = buildContactResponse({
+          const result = handler({
             method: req.method || 'GET',
             body,
           })

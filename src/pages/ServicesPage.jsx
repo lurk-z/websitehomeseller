@@ -1,3 +1,6 @@
+import { useEffect, useState } from 'react'
+import { pushAnalyticsEvent } from '../lib/analytics'
+
 const services = [
   {
     title: 'Room Styling',
@@ -23,7 +26,89 @@ const process = [
   'Refine the final composition for comfort and clarity',
 ]
 
+const projectMemberships = [
+  {
+    id: 'sukhumvit-lounge-refresh',
+    name: 'Sukhumvit Lounge Refresh',
+    lead: 'Amina S.',
+    status: 'Member review in progress',
+    nextReview: 'April 22, 2026',
+    summary:
+      'Main lounge seating update with lighting coordination and final supplier approval.',
+    members: [
+      { name: 'Korn P.', role: 'Styling Lead' },
+      { name: 'Mira L.', role: 'Procurement' },
+      { name: 'Tarn N.', role: 'Visual QA' },
+    ],
+  },
+  {
+    id: 'riverside-show-unit',
+    name: 'Riverside Show Unit',
+    lead: 'Nicha T.',
+    status: 'Selections locked',
+    nextReview: 'April 25, 2026',
+    summary:
+      'Show unit staging, final decor pass, and handoff preparation for launch photography.',
+    members: [
+      { name: 'Beam C.', role: 'Furniture Coordination' },
+      { name: 'Pim R.', role: 'Color Review' },
+      { name: 'Lena V.', role: 'Staging Support' },
+    ],
+  },
+  {
+    id: 'nordic-family-suite',
+    name: 'Nordic Family Suite',
+    lead: 'Krit W.',
+    status: 'Access list being updated',
+    nextReview: 'April 28, 2026',
+    summary:
+      'Bedroom and shared lounge concept with updated membership access for sourcing and approvals.',
+    members: [
+      { name: 'Ploy J.', role: 'Layout Review' },
+      { name: 'Mint A.', role: 'Textile Selection' },
+      { name: 'Jo K.', role: 'Client Liaison' },
+    ],
+  },
+]
+
 function ServicesPage() {
+  const [openProjectId, setOpenProjectId] = useState(null)
+
+  useEffect(() => {
+    pushAnalyticsEvent('team_workers_funnel_step', {
+      section_id: 'team-workers',
+      funnel_name: 'team_workers',
+      funnel_step: 'list_view',
+    })
+  }, [])
+
+  const handleProjectToggle = (project) => {
+    setOpenProjectId((current) => {
+      const nextProjectId = current === project.id ? null : project.id
+      const panelState = nextProjectId === project.id ? 'open' : 'closed'
+      const funnelStep = nextProjectId === project.id ? 'project_details_open' : 'project_details_close'
+
+      pushAnalyticsEvent('project_member_panel_toggle', {
+        section_id: 'team-workers',
+        project_id: project.id,
+        project_name: project.name,
+        panel_state: panelState,
+        funnel_name: 'team_workers',
+        funnel_step: funnelStep,
+      })
+
+      pushAnalyticsEvent('team_workers_funnel_step', {
+        section_id: 'team-workers',
+        project_id: project.id,
+        project_name: project.name,
+        funnel_name: 'team_workers',
+        funnel_step: funnelStep,
+      })
+
+      return nextProjectId
+    })
+  }
+
   return (
     <>
       <section className="page-section services-stage">
@@ -80,6 +165,85 @@ function ServicesPage() {
                 </div>
               </article>
             ))}
+          </div>
+        </div>
+      </section>
+
+      <section
+        className="page-section services-project-members team-workers-section"
+        data-funnel="team_workers"
+        data-funnel-step="list_view"
+        id="team-workers"
+      >
+        <div className="container services-project-members-grid">
+          <div className="services-project-members-intro">
+            <span className="eyebrow">Project Members</span>
+            <h2 className="section-title">Show only the project name until it is opened</h2>
+            <p className="section-copy">
+              Each row stays minimal by default. Click a project name to reveal
+              the member list, lead, review date, and the current working note.
+            </p>
+          </div>
+
+          <div className="project-member-list" role="list">
+            {projectMemberships.map((project) => {
+              const isOpen = openProjectId === project.id
+
+              return (
+                <article
+                  className={isOpen ? 'project-member-item project-member-item-open' : 'project-member-item'}
+                  key={project.id}
+                  role="listitem"
+                >
+                  <button
+                    aria-controls={`project-members-${project.id}`}
+                    aria-expanded={isOpen}
+                    className="project-member-trigger"
+                    data-funnel="team_workers"
+                    data-funnel-step={isOpen ? 'project_details_close' : 'project_details_open'}
+                    data-project-id={project.id}
+                    onClick={() => handleProjectToggle(project)}
+                    type="button"
+                  >
+                    <span className="project-member-title">{project.name}</span>
+                    <span className={isOpen ? 'project-member-toggle project-member-toggle-open' : 'project-member-toggle'}>
+                      <span></span>
+                      <span></span>
+                    </span>
+                  </button>
+
+                  {isOpen ? (
+                    <div className="project-member-panel" id={`project-members-${project.id}`}>
+                      <div className="project-member-meta-grid">
+                        <div className="project-member-meta-item">
+                          <span>Project Lead</span>
+                          <strong>{project.lead}</strong>
+                        </div>
+                        <div className="project-member-meta-item">
+                          <span>Status</span>
+                          <strong>{project.status}</strong>
+                        </div>
+                        <div className="project-member-meta-item">
+                          <span>Next Review</span>
+                          <strong>{project.nextReview}</strong>
+                        </div>
+                      </div>
+
+                      <p className="project-member-summary">{project.summary}</p>
+
+                      <div className="project-member-people-grid">
+                        {project.members.map((member) => (
+                          <div className="project-member-person" key={`${project.id}-${member.name}`}>
+                            <strong>{member.name}</strong>
+                            <span>{member.role}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ) : null}
+                </article>
+              )
+            })}
           </div>
         </div>
       </section>

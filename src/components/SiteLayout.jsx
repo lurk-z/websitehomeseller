@@ -1,7 +1,6 @@
 import { useEffect } from 'react'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { pushAnalyticsEvent } from '../lib/analytics'
-import ThreeBackground from './ThreeBackground'
 
 const navItems = [
   { to: '/', label: 'Home' },
@@ -16,6 +15,7 @@ const pageTitles = {
   '/about': 'Ration | About Us',
   '/services': 'Ration | Services',
   '/product': 'Ration | Product',
+  '/register': 'Ration | Register',
   '/contact': 'Ration | Contact',
 }
 
@@ -34,7 +34,6 @@ function SiteLayout() {
 
   return (
     <div className="site-shell">
-      <ThreeBackground />
       <header className="site-header">
         <div className="site-utility">
           <div className="container utility-bar">
@@ -74,7 +73,7 @@ function SiteLayout() {
 
           <div className="header-actions">
             <span className="language-chip">English</span>
-            <NavLink className="outline-button" to="/contact">
+            <NavLink className="outline-button" to="/register">
               Register
             </NavLink>
           </div>
