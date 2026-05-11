@@ -2,6 +2,11 @@
   min-height: 100vh;
 }
 
+.content-overlay {
+  position: relative;
+  z-index: 1;
+}
+
 .container {
   width: min(1200px, calc(100% - 32px));
   margin: 0 auto;
@@ -11,9 +16,10 @@
   position: sticky;
   top: 0;
   z-index: 30;
-  background: rgba(250, 245, 236, 0.88);
-  backdrop-filter: blur(18px);
-  border-bottom: 1px solid rgba(40, 31, 18, 0.08);
+  background: rgba(255, 255, 255, 0.45);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.3);
 }
 
 .site-utility {
@@ -276,11 +282,20 @@
 .contact-form-card,
 .contact-followup-card,
 .footer-brand-block {
+<<<<<<< Updated upstream
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 12px;
   background: rgba(255, 255, 255, 0.65);
   backdrop-filter: blur(16px);
   box-shadow: 0 16px 32px rgba(0, 0, 0, 0.04);
+=======
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.55);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.05);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+>>>>>>> Stashed changes
 }
 
 .home-feature-panel,
