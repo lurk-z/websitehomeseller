@@ -3,6 +3,9 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "engines": {
+    "node": "24.x"
+  },
   "scripts": {
     "start": "vite",
     "dev": "vite",
@@ -14,10 +17,6 @@
     "@react-three/drei": "^10.7.7",
     "@react-three/fiber": "^9.6.0",
     "framer-motion": "^12.38.0",
-<<<<<<< Updated upstream
-=======
-    "lucide-react": "^1.8.0",
->>>>>>> Stashed changes
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "react-router-dom": "^7.14.0",

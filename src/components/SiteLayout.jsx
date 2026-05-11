@@ -1,11 +1,7 @@
-<<<<<<< Updated upstream
 import { useEffect } from 'react'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { pushAnalyticsEvent } from '../lib/analytics'
-=======
-import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
->>>>>>> Stashed changes
 
 const navItems = [
   { to: '/', label: 'Home' },
@@ -24,10 +20,11 @@ const pageTitles = {
   '/contact': 'Ration | Contact',
 }
 
+const MotionPage = motion.div
+
 function SiteLayout() {
   const location = useLocation()
 
-<<<<<<< Updated upstream
   useEffect(() => {
     const title = pageTitles[location.pathname] || 'Ration'
     document.title = title
@@ -38,8 +35,6 @@ function SiteLayout() {
     })
   }, [location.pathname])
 
-=======
->>>>>>> Stashed changes
   return (
     <div className="site-shell">
       <header className="site-header">
@@ -90,7 +85,7 @@ function SiteLayout() {
 
       <main className="site-main">
         <AnimatePresence mode="wait">
-          <motion.div
+          <MotionPage
             key={location.pathname}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -98,7 +93,7 @@ function SiteLayout() {
             transition={{ duration: 0.5, ease: 'easeOut' }}
           >
             <Outlet />
-          </motion.div>
+          </MotionPage>
         </AnimatePresence>
       </main>
 

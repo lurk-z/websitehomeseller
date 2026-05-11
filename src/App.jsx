@@ -11,19 +11,6 @@ import './App.css'
 
 function App() {
   return (
-<<<<<<< Updated upstream
-    <Routes>
-      <Route element={<SiteLayout />}>
-        <Route path="/" element={<HomePage />} />
-        <Route path="/about" element={<AboutPage />} />
-        <Route path="/services" element={<ServicesPage />} />
-        <Route path="/product" element={<ProductPage />} />
-        <Route path="/register" element={<RegisterPage />} />
-        <Route path="/contact" element={<ContactPage />} />
-      </Route>
-      <Route path="*" element={<Navigate replace to="/" />} />
-    </Routes>
-=======
     <>
       <ThreeBackground />
       <div className="content-overlay">
@@ -33,13 +20,13 @@ function App() {
             <Route path="/about" element={<AboutPage />} />
             <Route path="/services" element={<ServicesPage />} />
             <Route path="/product" element={<ProductPage />} />
+            <Route path="/register" element={<RegisterPage />} />
             <Route path="/contact" element={<ContactPage />} />
           </Route>
           <Route path="*" element={<Navigate replace to="/" />} />
         </Routes>
       </div>
     </>
->>>>>>> Stashed changes
   )
 }
 
