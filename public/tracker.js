@@ -1427,6 +1427,8 @@
     currentPageUrl = newUrl;
     bestPageHeight = 0;
     pageviewSent = false;
+    lastVisibleZonesKey = "";
+    hbCount = 0;
 
     // flush events ของหน้าเดิม + ส่ง pageview ใหม่
     flush(true);
@@ -1678,29 +1680,75 @@
   /* ══════════════════════════════════════════════════════════
    *  VIEWPORT HEARTBEAT — dwell time per zone (every 3s)
    * ══════════════════════════════════════════════════════════ */
-  var hbInterval = null, lastZone = -1, hbCount = 0;
+  var hbInterval = null, hbStartTimer = null, lastVisibleZonesKey = "", hbCount = 0;
+
+  function clampPercent(value) {
+    return Math.max(0, Math.min(Math.round(value), 100));
+  }
+
+  function visibleViewportZones(scrollY, m) {
+    var pageHeight = Math.max(m.pageHeight || 1, 1);
+    var topPct = clampPercent((scrollY / pageHeight) * 100);
+    var bottomPct = clampPercent(((scrollY + m.viewportHeight) / pageHeight) * 100);
+    var startZone = Math.max(0, Math.min(Math.floor(topPct / 10) * 10, 90));
+    var endZone = Math.max(0, Math.min(Math.floor(bottomPct / 10) * 10, 90));
+    var zones = [];
+    for (var zone = startZone; zone <= endZone; zone += 10) zones.push(zone);
+    return {
+      zones: zones.length ? zones : [startZone],
+      topPct: topPct,
+      bottomPct: bottomPct,
+    };
+  }
 
   function sendHeartbeat() {
     if (!_eventToggles.track_viewport) return;
     if (document.visibilityState === "hidden") return;
     var sy = window.scrollY || 0, m = metrics();
     var bottom = sy + m.viewportHeight;
-    var pct = Math.round((bottom / Math.max(m.pageHeight, 1)) * 100);
-    var zone = Math.min(Math.floor(pct / 10) * 10, 90);
+    var pct = clampPercent((bottom / Math.max(m.pageHeight, 1)) * 100);
+    var visible = visibleViewportZones(sy, m);
+    var zonesKey = visible.zones.join(",");
     hbCount++;
-    if (zone !== lastZone || hbCount % 3 === 0) {
-      lastZone = zone;
-      enqueue({
-        type: "viewport",
-        depthPercent: Math.max(0, Math.min(pct, 100)),
-        payload: { url: pageUrl(), scrollY: Math.round(sy), viewportWidth: m.viewportWidth, viewportHeight: m.viewportHeight, pageWidth: m.pageWidth, pageHeight: m.pageHeight, zone: zone, foldY: m.viewportHeight, deviceType: deviceType() },
-        timestamp: ts(),
+    if (zonesKey !== lastVisibleZonesKey || hbCount % 3 === 0) {
+      lastVisibleZonesKey = zonesKey;
+      visible.zones.forEach(function (zone) {
+        enqueue({
+          type: "viewport",
+          depthPercent: pct,
+          payload: {
+            url: pageUrl(),
+            scrollY: Math.round(sy),
+            viewportWidth: m.viewportWidth,
+            viewportHeight: m.viewportHeight,
+            pageWidth: m.pageWidth,
+            pageHeight: m.pageHeight,
+            zone: zone,
+            zoneStartPercent: zone,
+            zoneEndPercent: Math.min(zone + 10, 100),
+            visibleTopPercent: visible.topPct,
+            visibleBottomPercent: visible.bottomPct,
+            foldY: m.viewportHeight,
+            deviceType: deviceType()
+          },
+          timestamp: ts(),
+        });
       });
     }
   }
 
-  function startHB() { if (hbInterval) return; hbInterval = setInterval(sendHeartbeat, 3000); sendHeartbeat(); }
-  function stopHB() { if (hbInterval) { clearInterval(hbInterval); hbInterval = null; } }
+  function startHB() {
+    if (hbInterval) return;
+    hbInterval = setInterval(sendHeartbeat, 3000);
+    hbStartTimer = setTimeout(function () {
+      hbStartTimer = null;
+      sendHeartbeat();
+    }, 800);
+  }
+  function stopHB() {
+    if (hbInterval) { clearInterval(hbInterval); hbInterval = null; }
+    if (hbStartTimer) { clearTimeout(hbStartTimer); hbStartTimer = null; }
+  }
   if (document.visibilityState !== "hidden") startHB();
 
   window.addEventListener("beforeunload", function () { stopHB(); sendPageHeight("unload"); flush(false); });
