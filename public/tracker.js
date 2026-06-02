@@ -614,11 +614,12 @@
     // Prefer content-bottom (footer) measurement over raw scrollHeight
     var cb = contentBottom();
     var rawH = (offsetH > 0 && offsetH <= scrollH * 2) ? Math.max(scrollH, offsetH) : scrollH;
-    // Use content-bottom if it's reasonable: >= viewport height and < raw height
-    // This prevents decorative absolutely-positioned elements from inflating height
-    var ph = (cb >= vh && cb < rawH) ? cb : rawH;
-    // Final safety cap at 6× viewport
-    ph = Math.min(ph, vh * 6);
+    // Prefer the full scrollable height so the 90%-100% canvas zone is not clipped.
+    // Only shrink when raw height is clearly inflated by decorative positioned elements.
+    var ph = Math.max(rawH, cb, vh);
+    if (cb >= vh && rawH > cb * 1.8 && rawH > vh * 10) {
+      ph = cb;
+    }
     return { viewportWidth: vw, viewportHeight: vh, pageWidth: pw, pageHeight: ph };
   }
 
