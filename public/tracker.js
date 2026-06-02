@@ -796,12 +796,17 @@
    *    postMessage ส่ง height ไปให้ parent
    * ══════════════════════════════════════════════════════════ */
   var currentPageUrl = pageUrl();
-  var bestPageHeight = 0; // ความสูงที่ดีที่สุดที่วัดได้สำหรับหน้าปัจจุบัน
+  var bestPageHeight = 0;
+
+  function resolvedMetrics() {
+    var m = metrics();
+    if (m.pageHeight > bestPageHeight) bestPageHeight = m.pageHeight;
+    if (bestPageHeight > m.pageHeight) m.pageHeight = bestPageHeight;
+    return m;
+  }
 
   function sendPageDiscover(trigger) {
-    var m = metrics();
-    // จำความสูงที่ดีที่สุด (เพราะ lazy-loaded content อาจทำให้สูงขึ้นทีหลัง)
-    if (m.pageHeight > bestPageHeight) bestPageHeight = m.pageHeight;
+    var m = resolvedMetrics();
 
     enqueue({
       type: "page_discover",
@@ -820,9 +825,9 @@
   }
 
   function sendPageHeight(trigger) {
-    var m = metrics();
-    if (Math.abs(m.pageHeight - bestPageHeight) < 50) return; // ไม่ส่งถ้าเปลี่ยนน้อยมาก
-    if (m.pageHeight > bestPageHeight) bestPageHeight = m.pageHeight;
+    var previousHeight = bestPageHeight;
+    var m = resolvedMetrics();
+    if (Math.abs(m.pageHeight - previousHeight) < 50) return;
 
     enqueue({
       type: "page_height",
@@ -837,14 +842,15 @@
       timestamp: ts(),
     });
 
+    lastVisibleZonesKey = "";
+    sendHeartbeat();
     reportToParentFrame();
   }
 
-  /* ────────────────── iframe ↔ parent communication ────────────────── */
   function reportToParentFrame() {
     if (window.self === window.top) return;
     try {
-      var m = metrics();
+      var m = resolvedMetrics();
       if (m.pageHeight > 200) {
         window.parent.postMessage({ type: "__analytics_page_metrics", pageHeight: m.pageHeight, pageWidth: m.pageWidth }, "*");
       }
@@ -856,23 +862,7 @@
   var heightDebounce = null;
 
   function checkHeight() {
-    var m = metrics();
-    if (m.pageHeight > bestPageHeight + 50) {
-      bestPageHeight = m.pageHeight;
-      enqueue({
-        type: "page_height",
-        payload: {
-          url: currentPageUrl,
-          pageHeight: bestPageHeight,
-          pageWidth: m.pageWidth,
-          viewportHeight: m.viewportHeight,
-          viewportWidth: m.viewportWidth,
-          trigger: "mutation",
-        },
-        timestamp: ts(),
-      });
-      reportToParentFrame();
-    }
+    sendPageHeight("mutation");
   }
 
   // MutationObserver จับ DOM changes → วัดความสูงใหม่
@@ -889,11 +879,7 @@
     // วัดหลายรอบ: 0.5s, 1.5s, 3s, 6s, 10s เพื่อจับ lazy content ทุกประเภท
     [500, 1500, 3000, 6000, 10000].forEach(function (delay) {
       setTimeout(function () {
-        var m = metrics();
-        if (m.pageHeight > bestPageHeight + 50) {
-          bestPageHeight = m.pageHeight;
-          sendPageHeight("load_settle_" + delay);
-        }
+        sendPageHeight("load_settle_" + delay);
         reportToParentFrame();
       }, delay);
     });
@@ -1337,7 +1323,7 @@
 
           if (html.length > 1500000) return; // still too large, skip
 
-          var m = metrics();
+          var m = resolvedMetrics();
           pendingSnapshot = {
             url: url,
             html: html,
@@ -1429,6 +1415,7 @@
     bestPageHeight = 0;
     pageviewSent = false;
     lastVisibleZonesKey = "";
+    lastHeartbeatPageHeight = 0;
     hbCount = 0;
 
     // flush events ของหน้าเดิม + ส่ง pageview ใหม่
@@ -1444,11 +1431,7 @@
     [800, 2000, 4000, 8000].forEach(function (delay) {
       setTimeout(function () {
         if (pageUrl() === currentPageUrl) {
-          var m = metrics();
-          if (m.pageHeight > bestPageHeight + 50) {
-            bestPageHeight = m.pageHeight;
-            sendPageHeight("spa_settle_" + delay);
-          }
+          sendPageHeight("spa_settle_" + delay);
           reportToParentFrame();
         }
       }, delay);
@@ -1492,7 +1475,7 @@
     if (!_eventToggles.track_clicks) return;
     var t = ev.target;
     if (!(t instanceof Element)) return;
-    var m = metrics();
+    var m = resolvedMetrics();
     enqueue({
       type: "click",
       element: elPath(t),
@@ -1667,7 +1650,7 @@
     var now = Date.now();
     if (now - lastScrollSent < 1000) return;
     lastScrollSent = now;
-    var m = metrics();
+    var m = resolvedMetrics();
     var bottom = window.scrollY + m.viewportHeight;
     var depth = Math.round((bottom / Math.max(m.pageHeight, 1)) * 100);
     enqueue({
@@ -1681,7 +1664,7 @@
   /* ══════════════════════════════════════════════════════════
    *  VIEWPORT HEARTBEAT — dwell time per zone (every 3s)
    * ══════════════════════════════════════════════════════════ */
-  var hbInterval = null, hbStartTimer = null, lastVisibleZonesKey = "", hbCount = 0;
+  var hbInterval = null, hbStartTimer = null, lastVisibleZonesKey = "", lastHeartbeatPageHeight = 0, hbCount = 0;
 
   function clampPercent(value) {
     return Math.max(0, Math.min(Math.round(value), 100));
@@ -1705,14 +1688,16 @@
   function sendHeartbeat() {
     if (!_eventToggles.track_viewport) return;
     if (document.visibilityState === "hidden") return;
-    var sy = window.scrollY || 0, m = metrics();
+    var sy = window.scrollY || 0, m = resolvedMetrics();
     var bottom = sy + m.viewportHeight;
     var pct = clampPercent((bottom / Math.max(m.pageHeight, 1)) * 100);
     var visible = visibleViewportZones(sy, m);
     var zonesKey = visible.zones.join(",");
+    var heightChanged = Math.abs(m.pageHeight - lastHeartbeatPageHeight) > 20;
     hbCount++;
-    if (zonesKey !== lastVisibleZonesKey || hbCount % 3 === 0) {
+    if (zonesKey !== lastVisibleZonesKey || heightChanged || hbCount % 3 === 0) {
       lastVisibleZonesKey = zonesKey;
+      lastHeartbeatPageHeight = m.pageHeight;
       visible.zones.forEach(function (zone) {
         enqueue({
           type: "viewport",
@@ -1871,8 +1856,6 @@
   // วัดความสูงครั้งแรกหลัง DOM settle
   window.addEventListener("load", function () {
     setTimeout(function () {
-      var m = metrics();
-      bestPageHeight = m.pageHeight;
       sendPageHeight("initial_load");
     }, 800);
 
