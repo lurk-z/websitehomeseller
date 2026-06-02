@@ -541,10 +541,19 @@
   /* ────────────────── Helpers ────────────────── */
   function deviceType() {
     var ua = navigator.userAgent || "";
-    if (/tablet|ipad|android(?!.*mobile)/i.test(ua)) return "tablet";
-    if (/mobile|iphone|ipod|android/i.test(ua)) return "mobile";
     // iPadOS 13+ sends a desktop-like UA; detect via touch + Mac platform
     if (navigator.maxTouchPoints > 1 && /Macintosh/i.test(ua)) return "tablet";
+    if (/tablet|ipad|android(?!.*mobile)/i.test(ua)) return "tablet";
+    if (/mobile|iphone|ipod|android/i.test(ua)) return "mobile";
+
+    var width = Math.min(
+      window.innerWidth || 0,
+      (document.documentElement && document.documentElement.clientWidth) || 0,
+      (typeof window.screen !== "undefined" && window.screen.width) || 0
+    );
+    if (width > 0 && width <= 767) return "mobile";
+    if (width > 0 && width <= 1024) return "tablet";
+
     return "desktop";
   }
 
